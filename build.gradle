@@ -22,7 +22,7 @@ idea {
     }
 }
 
-version = "1.12.2-1.4.0"
+version = "1.12.2-1.5.0"
 group = "bettercombat.mod"
 archivesBaseName = "BetterCombat"
 
