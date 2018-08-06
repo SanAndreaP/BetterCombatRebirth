@@ -31,7 +31,9 @@ public class ConfigurationHandler
             "net.minecraft.item.ItemAxe",
             "net.minecraft.item.ItemSpade",
             "net.minecraft.item.ItemPickaxe",
-            "net.minecraft.item.ItemHoe"
+            "net.minecraft.item.ItemHoe",
+            "slimeknights.tconstruct.library.tools.SwordCore",
+            "slimeknights.tconstruct.library.tools.AoeToolCore"
     };
     private static String[] itemClassBlacklist = new String[] {
             "net.minecraft.item.ItemBlock",
@@ -87,8 +89,8 @@ public class ConfigurationHandler
         critSound = config.getBoolean("Additional crit sound", "general", true, "Add an additional sound when a critical strike happens");
         itemClassWhitelist = config.getStringList("Item Class Whitelist", "general", ICW_DEF, "Whitelisted item classes for attacking. Item blacklist will overrule this for specific items!");
         itemClassBlacklist = config.getStringList("Item Class Blacklist", "general", ICB_DEF, "Blacklisted item classes for attacking. Item whitelist will overrule this for specific items!");
-        itemInstWhitelist = config.getStringList("Item Whitelist", "general", ICW_DEF, "Whitelisted items in the format \"domain:itemname\" for attacking. This overrules the item class blacklist!");
-        itemInstBlacklist = config.getStringList("Item Blacklist", "general", ICB_DEF, "Blacklisted items in the format \"domain:itemname\" for attacking. This overrules the item class whitelist!");
+        itemInstWhitelist = config.getStringList("Item Whitelist", "general", IIW_DEF, "Whitelisted items in the format \"domain:itemname\" for attacking. This overrules the item class blacklist!");
+        itemInstBlacklist = config.getStringList("Item Blacklist", "general", IIB_DEF, "Blacklisted items in the format \"domain:itemname\" for attacking. This overrules the item class whitelist!");
         if( config.hasChanged() ) {
             config.save();
         }
@@ -99,9 +101,7 @@ public class ConfigurationHandler
         for( String className : itemClassWhitelist ) {
             try {
                 classList.add(Class.forName(className));
-            } catch( ClassNotFoundException e ) {
-                e.printStackTrace();
-            }
+            } catch( ClassNotFoundException ignored ) { }
         }
         itemClassWhiteArray = classList.toArray(new Class<?>[0]);
 
@@ -139,7 +139,7 @@ public class ConfigurationHandler
             if( Arrays.stream(itemInstWhiteArray).anyMatch(blItem -> blItem == item) ) {
                 return true;
             }
-            return Arrays.stream(itemClassWhiteArray).anyMatch(blClass -> blClass.isInstance(item))
+            return Arrays.stream(itemClassWhiteArray).anyMatch(wlClass -> wlClass.isInstance(item))
                    && Arrays.stream(itemClassBlackArray).noneMatch(blClass -> blClass.isInstance(item));
         }
 

@@ -1,20 +1,20 @@
 {
-    "player.swordSlash": 
+    "player.swordslash":
     {
        "sounds": 
        [
            {
-               "name": "bettercombatmod:swordSlash",
+               "name": "bettercombatmod:swordslash",
                "stream": false
            }
        ]
    },
-   "player.criticalStrike": 
+   "player.criticalstrike":
     {
        "sounds": 
        [
            {
-               "name": "bettercombatmod:criticalStrike",
+               "name": "bettercombatmod:criticalstrike",
                "stream": false
            }
        ]

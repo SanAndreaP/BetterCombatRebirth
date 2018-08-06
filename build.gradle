@@ -22,7 +22,7 @@ idea {
     }
 }
 
-version = "1.12.2-1.5.0"
+version = "1.12.2-1.5.1"
 group = "bettercombat.mod"
 archivesBaseName = "BetterCombat"
 
@@ -56,6 +56,12 @@ processResources {
     }
 
     rename '(.+_at.cfg)', 'META-INF/$1'
+}
+
+jar {
+    manifest {
+        attributes 'FMLAT': 'bettercombat_at.cfg'
+    }
 }
 
 artifacts {

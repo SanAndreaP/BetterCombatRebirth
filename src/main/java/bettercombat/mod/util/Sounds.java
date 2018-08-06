@@ -9,8 +9,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class Sounds
 {
-    public static final SoundEvent SWORD_SLASH = registerSound("swordSlash");
-    public static final SoundEvent CRITICAL_STRIKE = registerSound("criticalStrike");
+    public static final SoundEvent SWORD_SLASH = registerSound("player.swordslash");
+    public static final SoundEvent CRITICAL_STRIKE = registerSound("player.criticalstrike");
 
     private static SoundEvent registerSound(String soundName) {
         ResourceLocation soundID = new ResourceLocation(Reference.MOD_ID, soundName);

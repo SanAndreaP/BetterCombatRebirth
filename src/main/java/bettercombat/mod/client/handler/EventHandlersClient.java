@@ -10,6 +10,7 @@ import bettercombat.mod.network.PacketMainhandAttack;
 import bettercombat.mod.network.PacketOffhandAttack;
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.Helpers;
+import bettercombat.mod.util.Reflections;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.settings.KeyBinding;
@@ -72,6 +73,10 @@ public class EventHandlersClient
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayer player = mc.player;
 
+        if( !player.getActiveItemStack().isEmpty() ) {
+            return;
+        }
+
         if( ConfigurationHandler.refoundEnergy ) {
             refoundEnergy(player);
         }
@@ -94,29 +99,26 @@ public class EventHandlersClient
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayer player = mc.player;
         if( player != null ) {
-            Item mainItem = null;
-            if( !player.getHeldItemMainhand().isEmpty() ) {
-                mainItem = player.getHeldItemMainhand().getItem();
+            if( !player.getActiveItemStack().isEmpty() ) {
+                return;
             }
-
             if( ConfigurationHandler.requireFullEnergy
                 && Helpers.execNullable(player.getCapability(EventHandlers.TUTO_CAP, null), CapabilityOffhandCooldown::getOffhandCooldown, 1) > 0)
             {
                 return;
             }
-            ItemStack itemstackOffHand = player.getHeldItem(EnumHand.OFF_HAND);
+            ItemStack stackMainHand = player.getHeldItemMainhand();
+            ItemStack stackOffHand = player.getHeldItemOffhand();
 
-            boolean canAttack = false;
-            if( !itemstackOffHand.isEmpty() ) {
-                canAttack = ConfigurationHandler.isItemAttackUsable(itemstackOffHand.getItem());
-            }
-            if( mainItem != null ) {
-                if( !ConfigurationHandler.isItemAttackUsable(mainItem) ) {
+            if( !stackOffHand.isEmpty() ) {
+                if( !ConfigurationHandler.isItemAttackUsable(stackOffHand.getItem()) ) {
                     return;
                 }
             }
-            if( !canAttack ) {
-                return;
+            if( !stackMainHand.isEmpty() ) {
+                if( !ConfigurationHandler.isItemAttackUsable(stackMainHand.getItem()) ) {
+                    return;
+                }
             }
 
             IOffHandAttack oha = player.getCapability(EventHandlers.OFFHAND_CAP, null);
