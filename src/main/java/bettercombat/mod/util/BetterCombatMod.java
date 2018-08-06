@@ -29,7 +29,7 @@ public class BetterCombatMod
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         CapabilityOffhandCooldown.register();
-        ConfigurationHandler.createItemLists();
+        ConfigurationHandler.createInstLists();
     }
 
     @Mod.EventHandler

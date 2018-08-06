@@ -10,22 +10,15 @@ import bettercombat.mod.network.PacketMainhandAttack;
 import bettercombat.mod.network.PacketOffhandAttack;
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.Helpers;
-import bettercombat.mod.util.Reflections;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IEntityOwnable;
-import net.minecraft.entity.item.EntityArmorStand;
-import net.minecraft.entity.passive.EntityHorse;
-import net.minecraft.entity.passive.EntityVillager;
-import net.minecraft.entity.passive.EntityWolf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
@@ -54,13 +47,17 @@ public class EventHandlersClient
         if( attack.getKeyCode() < 0 && event.getButton() == attack.getKeyCode() + 100 && event.isButtonstate() ) {
             onMouseLeftClick(event);
         }
-        if( useItem.getKeyCode() < 0 && event.getButton() == useItem.getKeyCode() + 100 && event.isButtonstate() ) {
+        if( ConfigurationHandler.enableOffHandAttack && useItem.getKeyCode() < 0 && event.getButton() == useItem.getKeyCode() + 100 && event.isButtonstate() ) {
             onMouseRightClick();
         }
     }
 
     @SubscribeEvent(receiveCanceled = true)
     public void onRenderGameOverlay(RenderGameOverlayEvent.Pre event) {
+        if( !ConfigurationHandler.enableOffHandAttack ) {
+            return;
+        }
+
         switch( event.getType() ) {
             case CROSSHAIRS:
                 event.setCanceled(true);
@@ -98,7 +95,7 @@ public class EventHandlersClient
     public static void onMouseRightClick() {
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayer player = mc.player;
-        if( player != null ) {
+        if( player != null && !player.isSpectator() ) {
             if( !player.getActiveItemStack().isEmpty() ) {
                 return;
             }
@@ -110,21 +107,17 @@ public class EventHandlersClient
             ItemStack stackMainHand = player.getHeldItemMainhand();
             ItemStack stackOffHand = player.getHeldItemOffhand();
 
-            if( !stackOffHand.isEmpty() ) {
-                if( !ConfigurationHandler.isItemAttackUsable(stackOffHand.getItem()) ) {
-                    return;
-                }
+            if( stackOffHand.isEmpty() || !ConfigurationHandler.isItemAttackUsable(stackOffHand.getItem()) ) {
+                return;
             }
-            if( !stackMainHand.isEmpty() ) {
-                if( !ConfigurationHandler.isItemAttackUsable(stackMainHand.getItem()) ) {
-                    return;
-                }
+            if( !stackMainHand.isEmpty() && !ConfigurationHandler.isItemAttackUsable(stackMainHand.getItem()) ) {
+                return;
             }
 
             IOffHandAttack oha = player.getCapability(EventHandlers.OFFHAND_CAP, null);
             RayTraceResult mov = getMouseOverExtended(ConfigurationHandler.longerAttack ? 5.0F : 4.0F);
 
-            if( mov != null && oha != null && shouldAttack(mov.entityHit, player) ) {
+            if( oha != null && (mov == null || mov.typeOfHit == RayTraceResult.Type.MISS || shouldAttack(mov.entityHit, player)) ) {
                 oha.swingOffHand(player);
             }
 
@@ -150,17 +143,14 @@ public class EventHandlersClient
 
     private static boolean shouldAttack(Entity entHit, EntityPlayer player) {
         if( entHit == null ) {
-            return true;
+            return false;
         }
 
         if( entHit instanceof EntityPlayerMP ) {
             return Helpers.execNullable(entHit.getServer(), MinecraftServer::isPVPEnabled, false);
         }
 
-        return !(entHit instanceof EntityHorse && Helpers.execNullable(((EntityHorse) entHit).getOwnerUniqueId(), uuid -> uuid.equals(player.getUniqueID()), false))
-                       && !(entHit instanceof EntityArmorStand)
-                       && !(entHit instanceof IEntityOwnable && ((IEntityOwnable) entHit).getOwner() == player)
-                       && !(entHit instanceof EntityVillager);
+        return ConfigurationHandler.isEntityAttackable(entHit) && !(entHit instanceof IEntityOwnable && ((IEntityOwnable) entHit).getOwner() == player);
     }
 
 
@@ -174,7 +164,7 @@ public class EventHandlersClient
         AxisAlignedBB viewBB = new AxisAlignedBB(rvEntity.posX - 0.5D, rvEntity.posY - 0.0D, rvEntity.posZ - 0.5D, rvEntity.posX + 0.5D, rvEntity.posY + 1.5D, rvEntity.posZ + 0.5D);
         if( mc.world != null ) {
             RayTraceResult traceResult = rvEntity.rayTrace(dist, 0.0F);
-            final Vec3d pos = rvEntity.getPositionEyes(0.0F);
+            final Vec3d pos = rvEntity.getPositionEyes(0.0F).addVector(0.0D, -Helpers.execNullable(rvEntity.getRidingEntity(), Entity::getMountedYOffset, 0.0D), 0.0D);
             final Vec3d lookVec = rvEntity.getLook(0.0F);
             final Vec3d lookTarget = pos.addVector(lookVec.x * dist, lookVec.y * dist, lookVec.z * dist);
             final float growth = 1.0F;
@@ -190,14 +180,15 @@ public class EventHandlersClient
                     AxisAlignedBB aabb;
 
                     if( ConfigurationHandler.widerAttack ) {
-                        aabb = new AxisAlignedBB(entity.posX - entity.width * 1.5F, entity.posY, entity.posZ - entity.width * 1.5F, entity.posX + entity.width * 1.5F, entity.posY + entity.height, entity.posZ + entity.width * 1.5F);
+                        float w = ConfigurationHandler.widerAttackWidth;
+                        aabb = new AxisAlignedBB(entity.posX - entity.width * w, entity.posY, entity.posZ - entity.width * w, entity.posX + entity.width * w, entity.posY + entity.height, entity.posZ + entity.width * w);
                     } else {
                         aabb = new AxisAlignedBB(entity.posX - entity.width / 2.0F, entity.posY, entity.posZ - entity.width / 2.0F, entity.posX + entity.width / 2.0F, entity.posY + entity.height, entity.posZ + entity.width / 2.0F);
                     }
 
                     aabb.grow(borderSize, borderSize, borderSize);
                     RayTraceResult mop0 = aabb.calculateIntercept(pos, lookTarget);
-                    if( aabb.contains(pos) ) {
+                    if( aabb.contains(pos) && entity != rvEntity.getRidingEntity() ) {
                         if( newDist >= -0.000001D ) {
                             pointed = entity;
                             newDist = 0.0D;

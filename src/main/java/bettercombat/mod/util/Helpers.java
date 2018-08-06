@@ -83,7 +83,7 @@ public final class Helpers
                 attack = (float) modifier.getValue().getAmount();
             }
         }
-        return (1.0F + attack) / (ConfigurationHandler.weakerOffhand ? 2 : 1);
+        return (1.0F + attack) * (ConfigurationHandler.weakerOffhand ? ConfigurationHandler.offHandEfficiency : 1.0F);
     }
 
     public static int getOffhandFireAspect(EntityPlayer player) {
@@ -147,7 +147,7 @@ public final class Helpers
                 if( damage > 0.0F || cMod > 0.0F ) {
                     boolean isStrong = cooledStr > 0.9F;
                     boolean knockback = false;
-                    boolean isCrit = player.getRNG().nextFloat() < 0.3F && !player.isSprinting();
+                    boolean isCrit = ConfigurationHandler.randomCrits && player.getRNG().nextFloat() < ConfigurationHandler.critChance && !player.isSprinting();
                     boolean isSword = false;
                     int knockbackMod = offhand ? getOffhandKnockback(player) : EnchantmentHelper.getKnockbackModifier(player);
                     int fireAspect = offhand ? getOffhandFireAspect(player) : EnchantmentHelper.getFireAspectModifier(player);
