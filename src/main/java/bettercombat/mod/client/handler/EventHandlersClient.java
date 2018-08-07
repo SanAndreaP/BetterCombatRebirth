@@ -24,6 +24,7 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -52,7 +53,7 @@ public class EventHandlersClient
         }
     }
 
-    @SubscribeEvent(receiveCanceled = true)
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public void onRenderGameOverlay(RenderGameOverlayEvent.Pre event) {
         if( !ConfigurationHandler.enableOffHandAttack ) {
             return;
@@ -60,8 +61,12 @@ public class EventHandlersClient
 
         switch( event.getType() ) {
             case CROSSHAIRS:
+                boolean cancelled = event.isCanceled();
                 event.setCanceled(true);
                 this.gc.renderAttackIndicator(0.5F, new ScaledResolution(Minecraft.getMinecraft()));
+                if( !cancelled ) {
+                    MinecraftForge.EVENT_BUS.post(new RenderGameOverlayEvent.Post(event, event.getType()));
+                }
                 break;
         }
     }
