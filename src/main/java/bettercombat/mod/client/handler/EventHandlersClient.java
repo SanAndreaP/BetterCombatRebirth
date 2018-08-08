@@ -86,8 +86,8 @@ public class EventHandlersClient
         RayTraceResult mov = getMouseOverExtended(ConfigurationHandler.longerAttack ? 5.0F : 4.0F);
         if( mov != null && mov.entityHit != null ) {
             if( mov.entityHit != player ) {
+                event.setCanceled(true);
                 if( ConfigurationHandler.requireFullEnergy && player.getCooledAttackStrength(0.5F) < 1.0F ) {
-                    event.setCanceled(true);
                     return;
                 }
 

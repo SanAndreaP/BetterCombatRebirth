@@ -52,7 +52,7 @@ public class EventHandlers
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(receiveCanceled = true)
     public void onLivingUpdate(LivingEvent.LivingUpdateEvent event) {
         ISecondHurtTimer sht = event.getEntityLiving().getCapability(SECONDHURTTIMER_CAP, null);
         if( sht != null && sht.getHurtTimerBCM() > 0 ) {
