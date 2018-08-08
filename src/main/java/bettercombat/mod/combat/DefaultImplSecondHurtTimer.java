@@ -1,46 +1,37 @@
 package bettercombat.mod.combat;
 
-import bettercombat.mod.util.Reflections;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.EnumHand;
 
 public class DefaultImplSecondHurtTimer
         implements ISecondHurtTimer
 {
-    private int hurtTimer;
+    private int hurtTime;
 
     @Override
     public int getHurtTimerBCM() {
-        return this.hurtTimer;
+        return this.hurtTime;
     }
 
     @Override
     public void setHurtTimerBCM(int hurtTimer) {
-        this.hurtTimer = hurtTimer;
+        this.hurtTime = hurtTimer;
     }
 
     @Override
     public void tick() {
-        if( this.hurtTimer > 0 ) {
-            this.hurtTimer -= 1;
+        if( this.hurtTime > 0 ) {
+            this.hurtTime -= 1;
         }
     }
 
     @Override
     public boolean attackEntityFromOffhand(Entity target, DamageSource dmgSrc, float amount) {
-        if( target.isEntityInvulnerable(dmgSrc) || this.hurtTimer > 0 ) {
-            return false;
-        }
-
-        if( target.world.isRemote ) {
-            return false;
-        }
-
-        if( !(target instanceof EntityLivingBase) ) {
+        if( target.isEntityInvulnerable(dmgSrc) || this.hurtTime > 0 || target.world.isRemote || !(target instanceof EntityLivingBase) ) {
             return false;
         }
 
@@ -50,75 +41,42 @@ public class DefaultImplSecondHurtTimer
             return false;
         }
 
-        boolean blocked = false;
-        if( amount > 0.0F ) {
-            if( Reflections.canBlockDamageSource(targetLiving, dmgSrc) ) {
-                Reflections.damageShield(targetLiving, amount);
-                if( dmgSrc.isProjectile() ) {
-                    amount = 0.0F;
-                } else {
-                    amount *= 0.33F;
-                    if( (dmgSrc.getImmediateSource() instanceof EntityLivingBase) ) {
-                        ((EntityLivingBase) dmgSrc.getImmediateSource()).knockBack(targetLiving, 0.5F, targetLiving.posX - dmgSrc.getImmediateSource().posX, targetLiving.posZ - dmgSrc.getImmediateSource().posZ);
-                    }
-                }
-                blocked = true;
+        boolean successfulAttack = false;
+        if( this.hurtTime <= 0 ) {
+            Entity trueSrc = dmgSrc.getTrueSource();
+            ItemStack buf;
+
+            if( trueSrc instanceof EntityPlayer ) { // switch offhand item to mainhand, so entities can properly determine what item hit them
+                EntityPlayer player = (EntityPlayer) trueSrc;
+                buf = player.getHeldItemMainhand();
+                player.setHeldItem(EnumHand.MAIN_HAND, player.getHeldItemOffhand());
+                player.setHeldItem(EnumHand.OFF_HAND, buf);
+            }
+
+            // save current hit times and set the value to 0 for the entity to allow hitting with the off-hand
+            int mainHurtTime = targetLiving.hurtTime;
+            int mainHurtResistance = targetLiving.hurtResistantTime;
+            targetLiving.hurtTime = 0;
+            targetLiving.hurtResistantTime = 0;
+
+            //attack entity
+            successfulAttack = targetLiving.attackEntityFrom(dmgSrc, amount);
+            if( successfulAttack ) {
+                this.hurtTime = 10;
+            }
+
+            // reset current hit times to the entity
+            targetLiving.hurtTime = mainHurtTime;
+            targetLiving.hurtResistantTime = mainHurtResistance;
+
+            if( trueSrc instanceof EntityPlayer ) { // reset held items to their proper slots
+                EntityPlayer player = (EntityPlayer) trueSrc;
+                buf = player.getHeldItemOffhand();
+                player.setHeldItem(EnumHand.OFF_HAND, player.getHeldItemMainhand());
+                player.setHeldItem(EnumHand.MAIN_HAND, buf);
             }
         }
 
-        targetLiving.limbSwingAmount = 1.5F;
-
-        if( this.hurtTimer <= 0 ) {
-            Reflections.damageEntity(targetLiving, dmgSrc, amount);
-            this.hurtTimer = 10;
-        }
-
-        targetLiving.attackedAtYaw = 0.0F;
-        Entity entity = dmgSrc.getTrueSource();
-        if( entity != null ) {
-            if( (entity instanceof EntityLivingBase) ) {
-                targetLiving.setRevengeTarget((EntityLivingBase) entity);
-            }
-            if( entity instanceof EntityPlayer ) {
-                targetLiving.recentlyHit = 100;
-                targetLiving.attackingPlayer = (EntityPlayer) entity;
-            }
-        }
-
-        if( blocked ) {
-            targetLiving.world.setEntityState(targetLiving, (byte) 29);
-        } else {
-            targetLiving.world.setEntityState(targetLiving, (byte) 2);
-        }
-
-        if( dmgSrc != DamageSource.DROWN && (!blocked || amount > 0.0F) ) {
-            Reflections.markVelocityChanged(targetLiving);
-        }
-
-        if( entity != null ) {
-            double dPosX = entity.posX - targetLiving.posX;
-            double dPosZ = entity.posZ - targetLiving.posZ;
-            for(; dPosX * dPosX + dPosZ * dPosZ < 1.0E-4D; dPosZ = (Math.random() - Math.random()) * 0.01D ) {
-                dPosX = (Math.random() - Math.random()) * 0.01D;
-            }
-
-            targetLiving.attackedAtYaw = (float) (MathHelper.atan2(dPosZ, dPosX) * 57.29577951308232D - targetLiving.rotationYaw);
-            targetLiving.knockBack(entity, 0.4F, dPosX, dPosZ);
-        } else {
-            targetLiving.attackedAtYaw = (int) (Math.random() * 2.0D) * 180;
-        }
-
-        if( targetLiving.getHealth() <= 0.0F ) {
-            SoundEvent soundevent = Reflections.getDeathSound(targetLiving);
-            if( soundevent != null ) {
-                targetLiving.playSound(soundevent, Reflections.getSoundVolume(targetLiving), Reflections.getSoundPitch(targetLiving));
-            }
-
-            targetLiving.onDeath(dmgSrc);
-        } else {
-            Reflections.playHurtSound(targetLiving, dmgSrc);
-        }
-
-        return !blocked || amount > 0.0F;
+        return successfulAttack;
     }
 }
