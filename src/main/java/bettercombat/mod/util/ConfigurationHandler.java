@@ -18,7 +18,7 @@ public class ConfigurationHandler
 {
     public static Configuration config;
 
-    private static final int VERSION = 3;
+    private static final int VERSION = 4;
 
     public static boolean requireFullEnergy = false;
     public static boolean hitSound = true;
@@ -44,30 +44,7 @@ public class ConfigurationHandler
             "slimeknights.tconstruct.library.tools.SwordCore",
             "slimeknights.tconstruct.library.tools.AoeToolCore"
     };
-    private static String[] itemClassBlacklist = new String[] {
-            "net.minecraft.item.ItemBlock",
-            "net.minecraft.item.ItemEgg",
-            "net.minecraft.item.ItemBoat",
-            "net.minecraft.item.ItemWritableBook",
-            "net.minecraft.item.ItemFood",
-            "net.minecraft.item.ItemBucket",
-            "net.minecraft.item.ItemSeedFood",
-            "net.minecraft.item.ItemBow",
-            "net.minecraft.item.ItemEnderPearl",
-            "net.minecraft.item.ItemMonsterPlacer",
-            "net.minecraft.item.ItemSnowball",
-            "net.minecraft.item.ItemShears",
-            "net.minecraft.item.ItemFishingRod",
-            "net.minecraft.item.ItemFlintAndSteel",
-            "net.minecraft.item.ItemBlockSpecial",
-            "net.minecraft.item.ItemShield",
-            "net.minecraftforge.common.IPlantable"
-    };
     private static String[] itemInstWhitelist = new String[] {};
-    private static String[] itemInstBlacklist = new String[] {
-            "minecraft:wheat",
-            "minecraft:bone"
-    };
     private static String[] entityBlacklist = new String[] {
             "net.minecraft.entity.passive.EntityHorse",
             "net.minecraft.entity.item.EntityArmorStand",
@@ -75,15 +52,11 @@ public class ConfigurationHandler
     };
 
     private static final String[] ICW_DEF = Arrays.copyOf(itemClassWhitelist, itemClassWhitelist.length);
-    private static final String[] ICB_DEF = Arrays.copyOf(itemClassBlacklist, itemClassBlacklist.length);
     private static final String[] IIW_DEF = Arrays.copyOf(itemInstWhitelist, itemInstWhitelist.length);
-    private static final String[] IIB_DEF = Arrays.copyOf(itemInstBlacklist, itemInstBlacklist.length);
     private static final String[] EB_DEF = Arrays.copyOf(entityBlacklist, entityBlacklist.length);
 
     private static Class<?>[] itemClassWhiteArray;
-    private static Class<?>[] itemClassBlackArray;
     private static Item[] itemInstWhiteArray;
-    private static Item[] itemInstBlackArray;
     private static Class<?>[] entityBlackArray;
 
     public static void init(File configFile) {
@@ -112,10 +85,8 @@ public class ConfigurationHandler
         moreSweep = config.getBoolean("More swipe animation", "general", true, "Every items can spawn the swipe animation");
         hitSound = config.getBoolean("Additional hit sound", "general", true, "Add an additional sound when striking a target");
         critSound = config.getBoolean("Additional crit sound", "general", true, "Add an additional sound when a critical strike happens");
-        itemClassWhitelist = config.getStringList("Item Class Whitelist", "general", ICW_DEF, "Whitelisted item classes for attacking. Item blacklist will overrule this for specific items!");
-        itemClassBlacklist = config.getStringList("Item Class Blacklist", "general", ICB_DEF, "Blacklisted item classes for attacking. Item whitelist will overrule this for specific items!");
-        itemInstWhitelist = config.getStringList("Item Whitelist", "general", IIW_DEF, "Whitelisted items in the format \"domain:itemname\" for attacking. This overrules the item class blacklist!");
-        itemInstBlacklist = config.getStringList("Item Blacklist", "general", IIB_DEF, "Blacklisted items in the format \"domain:itemname\" for attacking. This overrules the item class whitelist!");
+        itemClassWhitelist = config.getStringList("Item Class Whitelist", "general", ICW_DEF, "Whitelisted item classes for attacking.");
+        itemInstWhitelist = config.getStringList("Item Whitelist", "general", IIW_DEF, "Whitelisted items in the format \"domain:itemname\" for attacking.");
         enableOffHandAttack = config.getBoolean("Enable Offhand Attacks", "general", true, "Enables the capability to attack with your off-hand");
         offHandEfficiency = config.getFloat("Offhand Efficiency", "general", 0.5F, 0.0F, 16384.0F, "The efficiency of an attack with offhanded weapon in percent (attack damage * efficiency)");
         critChance = config.getFloat("Random Crit Chance", "general", 0.3F, 0.0F, 1.0F, "How likely it is to land a critical hit in percent");
@@ -123,8 +94,8 @@ public class ConfigurationHandler
         entityBlacklist = config.getStringList("Entity Blacklist", "general", EB_DEF, "Blacklisted entity classes for attacking. You will not be able to attack any entity that extends this class! Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
 
         if( loadedVer < VERSION ) {
-            itemInstBlacklist = Stream.concat(Arrays.stream(itemInstBlacklist), Stream.of("minecraft:bone")).toArray(String[]::new);
-            config.getCategory("general").get("Item Blacklist").set(itemInstBlacklist);
+            config.getCategory("general").remove("Item Class Blacklist");
+            config.getCategory("general").remove("Item Blacklist");
         }
 
         if( config.hasChanged() ) {
@@ -140,16 +111,6 @@ public class ConfigurationHandler
             } catch( ClassNotFoundException ignored ) { }
         }
         itemClassWhiteArray = classList.toArray(new Class<?>[0]);
-
-        classList.clear();
-        for( String className : itemClassBlacklist ) {
-            try {
-                classList.add(Class.forName(className));
-            } catch( ClassNotFoundException e ) {
-                e.printStackTrace();
-            }
-        }
-        itemClassBlackArray = classList.toArray(new Class<?>[0]);
 
         classList.clear();
         for( String className : entityBlacklist ) {
@@ -169,29 +130,14 @@ public class ConfigurationHandler
             }
         }
         itemInstWhiteArray = itemList.toArray(new Item[0]);
-
-        itemList.clear();
-        for( String itemName : itemInstBlacklist ) {
-            Item itm = Item.REGISTRY.getObject(new ResourceLocation(itemName));
-            if( itm != null ) {
-                itemList.add(itm);
-            }
-        }
-        itemInstBlackArray = itemList.toArray(new Item[0]);
     }
 
     public static boolean isItemAttackUsable(final Item item) {
-        if( Arrays.stream(itemInstBlackArray).noneMatch(blItem -> blItem == item) ) {
-            if( Arrays.stream(itemInstWhiteArray).anyMatch(blItem -> blItem == item) ) {
-                return true;
-            }
-            if( Arrays.stream(itemClassWhiteArray).noneMatch(wlClass -> wlClass.isInstance(item)) ) {
-                return Arrays.stream(itemClassBlackArray).noneMatch(blClass -> blClass.isInstance(item));
-            }
+        if( Arrays.stream(itemInstWhiteArray).anyMatch(blItem -> blItem == item) ) {
             return true;
         }
 
-        return false;
+        return Arrays.stream(itemClassWhiteArray).anyMatch(wlClass -> wlClass.isInstance(item));
     }
 
     public static boolean isEntityAttackable(final Entity entity) {
