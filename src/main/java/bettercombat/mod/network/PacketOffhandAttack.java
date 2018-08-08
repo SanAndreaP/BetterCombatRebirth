@@ -4,6 +4,9 @@ import bettercombat.mod.util.Helpers;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.play.server.SPacketAnimation;
+import net.minecraft.util.EnumHand;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -41,11 +44,12 @@ public class PacketOffhandAttack implements IMessage
         }
 
         private static void handle(PacketOffhandAttack message, MessageContext ctx) {
-            EntityPlayerMP thePlayer = ctx.getServerHandler().player;
-            Entity theEntity = thePlayer.world.getEntityByID(message.entityId);
+            EntityPlayerMP player = ctx.getServerHandler().player;
+            Entity theEntity = player.world.getEntityByID(message.entityId);
             if( theEntity != null ) {
-                Helpers.attackTargetEntityItem(thePlayer, theEntity, true);
+                Helpers.attackTargetEntityItem(player, theEntity, true);
             }
+            ((WorldServer) player.world).getEntityTracker().sendToTracking(player, new SPacketAnimation(player, 3));
         }
     }
 }

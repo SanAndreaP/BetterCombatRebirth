@@ -4,7 +4,10 @@ import bettercombat.mod.util.Helpers;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.play.server.SPacketAnimation;
+import net.minecraft.util.EnumHand;
 import net.minecraft.world.GameType;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -42,15 +45,16 @@ public class PacketMainhandAttack implements IMessage
         }
 
         private static void handle(PacketMainhandAttack message, MessageContext ctx) {
-            EntityPlayerMP thePlayer = ctx.getServerHandler().player;
-            Entity theEntity = thePlayer.world.getEntityByID(message.entityId);
+            EntityPlayerMP player = ctx.getServerHandler().player;
+            Entity theEntity = player.world.getEntityByID(message.entityId);
             if( theEntity != null ) {
-                if( thePlayer.interactionManager.getGameType() == GameType.SPECTATOR ) {
-                    thePlayer.setSpectatingEntity(theEntity);
+                if( player.interactionManager.getGameType() == GameType.SPECTATOR ) {
+                    player.setSpectatingEntity(theEntity);
                 } else {
-                    Helpers.attackTargetEntityItem(thePlayer, theEntity, false);
+                    Helpers.attackTargetEntityItem(player, theEntity, false);
                 }
             }
+            ((WorldServer) player.world).getEntityTracker().sendToTracking(player, new SPacketAnimation(player, 0));
         }
     }
 }

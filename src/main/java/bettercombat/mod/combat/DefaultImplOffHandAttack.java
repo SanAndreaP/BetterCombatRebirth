@@ -32,7 +32,7 @@ public class DefaultImplOffHandAttack
         player.isSwingInProgress = true;
         player.swingingHand = EnumHand.OFF_HAND;
         if( player.world instanceof WorldServer ) {
-            ((WorldServer) player.world).getEntityTracker().sendToTracking(player, new SPacketAnimation(player, 0));
+            ((WorldServer) player.world).getEntityTracker().sendToTracking(player, new SPacketAnimation(player, 3));
         }
     }
 }

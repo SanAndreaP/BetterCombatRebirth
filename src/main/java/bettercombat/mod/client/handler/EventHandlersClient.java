@@ -18,10 +18,13 @@ import net.minecraft.entity.IEntityOwnable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.play.server.SPacketAnimation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -90,6 +93,9 @@ public class EventHandlersClient
                 if( ConfigurationHandler.requireFullEnergy && player.getCooledAttackStrength(0.5F) < 1.0F ) {
                     return;
                 }
+
+                player.isSwingInProgress = true;
+                player.swingingHand = EnumHand.MAIN_HAND;
 
                 player.attackTargetEntityWithCurrentItem(mov.entityHit);
                 PacketHandler.instance.sendToServer(new PacketMainhandAttack(mov.entityHit.getEntityId()));
