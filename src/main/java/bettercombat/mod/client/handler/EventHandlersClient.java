@@ -109,13 +109,9 @@ public class EventHandlersClient
             {
                 return;
             }
-            ItemStack stackMainHand = player.getHeldItemMainhand();
             ItemStack stackOffHand = player.getHeldItemOffhand();
 
             if( stackOffHand.isEmpty() || !ConfigurationHandler.isItemAttackUsable(stackOffHand.getItem()) ) {
-                return;
-            }
-            if( !stackMainHand.isEmpty() && !ConfigurationHandler.isItemAttackUsable(stackMainHand.getItem()) ) {
                 return;
             }
 
