@@ -22,7 +22,7 @@ idea {
     }
 }
 
-version = "1.12.2-1.5.5"
+version = "1.12.2-1.5.6"
 group = "bettercombat.mod"
 archivesBaseName = "BetterCombat"
 
@@ -39,6 +39,14 @@ minecraft {
 
 repositories {
     mavenCentral()
+    maven {
+        name = "CurseForge"
+        url = "https://minecraft.curseforge.com/api/maven/"
+    }
+}
+
+dependencies {
+    deobfCompile "aether-legacy:aether_legacy:1.12.2:v3.2"
 }
 
 processResources {

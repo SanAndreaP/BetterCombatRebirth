@@ -14,6 +14,7 @@ import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemHoe;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.item.ItemTool;
@@ -69,18 +70,8 @@ public class GuiCrosshairsBC
                 if( mc.gameSettings.attackIndicator == 1 ) {
                     float cooledStr = mc.player.getCooledAttackStrength(0.0F);
                     ItemStack heldItemOH = mc.player.getHeldItemOffhand();
-                    if( heldItemOH.getItem() instanceof net.minecraft.item.ItemHoe || heldItemOH.getItem() instanceof ItemTool || heldItemOH.getItem() instanceof ItemSword ) {
-                        int cooldown = 1;
-                        for( String s : heldItemOH.getTooltip(mc.player, ITooltipFlag.TooltipFlags.NORMAL) ) {
-                            if( !s.isEmpty() ) {
-                                if( s.contains("Speed") ) {
-                                    String s2 = s.replace(",", ".").split(" ")[1];
-                                    if( !s2.isEmpty() ) {
-                                        cooldown = (int) (20.0F / Float.parseFloat(s2));
-                                    }
-                                }
-                            }
-                        }
+                    if( heldItemOH.getItem() instanceof ItemHoe || heldItemOH.getItem() instanceof ItemTool || heldItemOH.getItem() instanceof ItemSword ) {
+                        int cooldown = Helpers.getOffhandCooldown(mc.player);
 
                         float ohCooldown = Helpers.execNullable(mc.player.getCapability(EventHandlers.TUTO_CAP, null), CapabilityOffhandCooldown::getOffhandCooldown, 0) / (float) cooldown;
                         ohCooldown = Math.abs(1.0F - ohCooldown);
