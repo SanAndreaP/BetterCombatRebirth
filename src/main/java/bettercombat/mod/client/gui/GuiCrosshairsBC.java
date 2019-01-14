@@ -79,16 +79,16 @@ public class GuiCrosshairsBC
                             int i = sh / 2 - 7 + 16;
                             int j = sw / 2 - 7;
                             int k = (int) (cooledStr * 17.0F);
-                            drawTexturedModalRect(j - 15, i, 36, 94, 16, 4);
-                            drawTexturedModalRect(j - 15, i, 52, 94, k, 4);
+                            drawTexturedModalRect(j + 15, i, 36, 94, 16, 4);
+                            drawTexturedModalRect(j + 15, i, 52, 94, k, 4);
                         }
 
                         if( ohCooldown < 1.0F ) {
                             int i = sh / 2 - 7 + 16;
                             int j = sw / 2 - 7;
                             int k = (int) (ohCooldown * 17.0F);
-                            drawTexturedModalRect(j + 15, i, 36, 94, 16, 4);
-                            drawTexturedModalRect(j + 15, i, 52, 94, k, 4);
+                            drawTexturedModalRect(j - 15, i, 36, 94, 16, 4);
+                            drawTexturedModalRect(j - 15, i, 52, 94, k, 4);
                         }
                     } else if( cooledStr < 1.0F ) {
                         int i = sh / 2 - 7 + 16;

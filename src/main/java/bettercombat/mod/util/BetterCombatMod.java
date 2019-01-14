@@ -12,14 +12,13 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 @Mod(modid=Reference.MOD_ID, name=Reference.MOD_NAME, version=Reference.VERSION, guiFactory="bettercombat.mod.client.gui.GUIFactory", acceptedMinecraftVersions="[1.12.2]")
 public class BetterCombatMod
 {
-    @SidedProxy(clientSide = Reference.CLIENT_PROXY_CLASS, serverSide = Reference.SERVER_PROXY_CLASS)
+    @SidedProxy(modId = Reference.MOD_ID, clientSide = Reference.CLIENT_PROXY_CLASS, serverSide = Reference.SERVER_PROXY_CLASS)
     public static CommonProxy proxy;
-    @Mod.Instance
+    @Mod.Instance(Reference.MOD_ID)
     public static BetterCombatMod modInstance;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        modInstance = this;
         MinecraftForge.EVENT_BUS.register(EventHandlers.INSTANCE);
         proxy.preInit(event);
         ConfigurationHandler.init(event.getSuggestedConfigurationFile());

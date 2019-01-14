@@ -66,8 +66,8 @@ public class EventHandlersClient
             case CROSSHAIRS:
                 boolean cancelled = event.isCanceled();
                 event.setCanceled(true);
-                this.gc.renderAttackIndicator(0.5F, new ScaledResolution(Minecraft.getMinecraft()));
                 if( !cancelled ) {
+                    this.gc.renderAttackIndicator(0.5F, new ScaledResolution(Minecraft.getMinecraft()));
                     MinecraftForge.EVENT_BUS.post(new RenderGameOverlayEvent.Post(event, event.getType()));
                 }
                 break;

@@ -9,7 +9,6 @@ package bettercombat.mod.util;
 import bettercombat.mod.handler.EventHandlers;
 import bettercombat.mod.capability.CapabilityOffhandCooldown;
 import com.google.common.collect.Multimap;
-import jline.internal.Nullable;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
@@ -22,6 +21,7 @@ import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Enchantments;
+import net.minecraft.init.MobEffects;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemAxe;
@@ -42,6 +42,7 @@ import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.ForgeEventFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -147,7 +148,7 @@ public final class Helpers
                 if( damage > 0.0F || cMod > 0.0F ) {
                     boolean isStrong = cooledStr > 0.9F;
                     boolean knockback = false;
-                    boolean isCrit = ConfigurationHandler.randomCrits && player.getRNG().nextFloat() < ConfigurationHandler.critChance && !player.isSprinting();
+                    boolean isCrit;
                     boolean isSword = false;
                     int knockbackMod = offhand ? getOffhandKnockback(player) : EnchantmentHelper.getKnockbackModifier(player);
                     int fireAspect = offhand ? getOffhandFireAspect(player) : EnchantmentHelper.getFireAspectModifier(player);
@@ -158,9 +159,21 @@ public final class Helpers
                         knockback = true;
                     }
 
-                    if( isCrit ) {
-                        damage *= 1.5F;
+                    if( ConfigurationHandler.randomCrits ) {
+                        isCrit = player.getRNG().nextFloat() < ConfigurationHandler.critChance && !player.isSprinting();
+                    } else {
+                        isCrit = isStrong && player.fallDistance > 0.0F && !player.onGround && !player.isOnLadder() && !player.isInWater()
+                                         && !player.isPotionActive(MobEffects.BLINDNESS) && !player.isRiding() && targetEntity instanceof EntityLivingBase
+                                         && !player.isSprinting();
+
                     }
+
+                    net.minecraftforge.event.entity.player.CriticalHitEvent hitResult = net.minecraftforge.common.ForgeHooks.getCriticalHit(player, targetEntity, isCrit, isCrit ? 1.5F : 1.0F);
+                    isCrit = hitResult != null;
+                    if( isCrit ) {
+                        damage *= hitResult.getDamageModifier();
+                    }
+
                     damage += cMod;
 
                     double tgtDistDelta = player.distanceWalkedModified - player.prevDistanceWalkedModified;
