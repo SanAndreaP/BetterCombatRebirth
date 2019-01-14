@@ -29,10 +29,6 @@ public class DefaultImplOffHandAttack
 
     @Override
     public void swingOffHand(EntityPlayer player) {
-        player.isSwingInProgress = true;
-        player.swingingHand = EnumHand.OFF_HAND;
-        if( player.world instanceof WorldServer ) {
-            ((WorldServer) player.world).getEntityTracker().sendToTracking(player, new SPacketAnimation(player, 3));
-        }
+        player.swingArm(EnumHand.OFF_HAND);
     }
 }
