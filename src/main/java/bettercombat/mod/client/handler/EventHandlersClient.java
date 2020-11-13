@@ -1,5 +1,8 @@
 package bettercombat.mod.client.handler;
 
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemSword;
+import net.minecraft.item.ItemAxe;
 import bettercombat.mod.capability.CapabilityOffhandCooldown;
 import bettercombat.mod.client.gui.GuiCrosshairsBC;
 import bettercombat.mod.combat.IOffHandAttack;
@@ -66,8 +69,8 @@ public class EventHandlersClient
             case CROSSHAIRS:
                 boolean cancelled = event.isCanceled();
                 event.setCanceled(true);
+                this.gc.renderAttackIndicator(0.5F, new ScaledResolution(Minecraft.getMinecraft()));
                 if( !cancelled ) {
-                    this.gc.renderAttackIndicator(0.5F, new ScaledResolution(Minecraft.getMinecraft()));
                     MinecraftForge.EVENT_BUS.post(new RenderGameOverlayEvent.Post(event, event.getType()));
                 }
                 break;
@@ -80,6 +83,17 @@ public class EventHandlersClient
 
         if( !player.getActiveItemStack().isEmpty() ) {
             return;
+        }
+
+        ItemStack stackMainHand = player.getHeldItemMainhand();
+        if( stackMainHand.isEmpty() || !ConfigurationHandler.isItemAttackUsable(stackMainHand.getItem()) ) {
+            onMouseRightClick();
+            return;
+        }
+
+
+        if( ConfigurationHandler.refoundEnergy ) {
+            refoundEnergy(player);
         }
 
         RayTraceResult mov = getMouseOverExtended(ConfigurationHandler.longerAttack ? 5.0F : 4.0F);
@@ -95,14 +109,16 @@ public class EventHandlersClient
 
                 player.attackTargetEntityWithCurrentItem(mov.entityHit);
                 PacketHandler.instance.sendToServer(new PacketMainhandAttack(mov.entityHit.getEntityId()));
-
-                return;
             }
         }
+    }
 
-        if( ConfigurationHandler.refoundEnergy ) {
-            refoundEnergy(player);
-        }
+    public static boolean hasRightClickAction(Class<?> clazz) {
+      try {
+        return clazz.getMethod("onItemRightClick").getDeclaringClass() != Item.class;
+      } catch(Exception e) {
+        return false;
+      }
     }
 
     public static void onMouseRightClick() {
@@ -117,9 +133,16 @@ public class EventHandlersClient
             {
                 return;
             }
+
+            ItemStack stackMainHand = player.getHeldItemMainhand();
+            if( stackMainHand.isEmpty() || hasRightClickAction(stackMainHand.getItem().getClass()) ) {
+                onMouseRightClick();
+                return;
+            }
+
             ItemStack stackOffHand = player.getHeldItemOffhand();
 
-            if( stackOffHand.isEmpty() || !ConfigurationHandler.isItemAttackUsable(stackOffHand.getItem(), player.getHeldItemMainhand()) ) {
+            if( stackOffHand.isEmpty() || !ConfigurationHandler.isItemAttackUsable(stackOffHand.getItem()) ) {
                 return;
             }
 
@@ -139,12 +162,9 @@ public class EventHandlersClient
                 if( sht != null && sht.getHurtTimerBCM() <= 0 ) {
                     if( shouldAttack(mov.entityHit, player) ) {
                         PacketHandler.instance.sendToServer(new PacketOffhandAttack(mov.entityHit.getEntityId()));
-                        return;
                     }
                 }
             }
-
-            PacketHandler.instance.sendToServer(new PacketOffhandAttack());
         }
     }
 
